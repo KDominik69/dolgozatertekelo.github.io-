@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="hu">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dolgozat Értékelő</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f9f9f9;
+            color: #333;
+        }
+        header {
+            background-color: #6200ea;
+            color: white;
+            padding: 1rem;
+            text-align: center;
+        }
+        main {
+            padding: 2rem;
+            max-width: 900px;
+            margin: 2rem auto;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+        label {
+            display: block;
+            margin-bottom: 0.5rem;
+        }
+        input[type="text"], input[type="number"], select, button {
+            padding: 0.5rem;
+            font-size: 1rem;
+            margin: 0.5rem 0;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            width: 100%;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 1.5rem;
+        }
+        th, td {
+            padding: 0.75rem;
+            border: 1px solid #ddd;
+            text-align: center;
+        }
+        th {
+            background-color: #f4f4f4;
+        }
+        .delete-btn {
+            background-color: #ff5252;
+            color: white;
+            border: none;
+            padding: 0.25rem 0.5rem;
+            cursor: pointer;
+            border-radius: 4px;
+        }
+        .delete-btn:hover {
+            background-color: #d50000;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>Dolgozat Értékelő</h1>
+    </header>
+    <main>
+        <div class="form-group">
+            <label for="maxPoints">Maximális Pontszám:</label>
+            <input type="number" id="maxPoints" placeholder="Add meg a maximális pontszámot" min="0" value="50">
+        </div>
+        <div class="form-group">
+            <label for="thresholds">Ponthatárok:</label>
+            <input type="number" id="grade5" placeholder="5-ös ponthatár (%)" min="0" max="100" value="90">
+            <input type="number" id="grade4" placeholder="4-es ponthatár (%)" min="0" max="100" value="80">
+            <input type="number" id="grade3" placeholder="3-as ponthatár (%)" min="0" max="100" value="70">
+            <input type="number" id="grade2" placeholder="2-es ponthatár (%)" min="0" max="100" value="50">
+        </div>
+        <div class="form-group">
+            <label for="class">Osztály:</label>
+            <input type="text" id="class" placeholder="Add meg az osztály nevét (pl. 10.A)">
+        </div>
+        <div class="form-group">
+            <label for="studentName">Tanuló Neve:</label>
+            <input type="text" id="studentName" placeholder="Add meg a tanuló nevét">
+        </div>
+        <div class="form-group">
+            <label for="studentPoints">Pontszám:</label>
+            <input type="number" id="studentPoints" placeholder="Add meg a pontszámot" min="0">
+        </div>
+        <div class="form-group">
+            <button onclick="addStudent()">Hozzáadás</button>
+        </div>
+
+        <table id="studentTable">
+            <thead>
+                <tr>
+                    <th>Osztály</th>
+                    <th>Név</th>
+                    <th>Pontszám</th>
+                    <th>Teljesítmény (%)</th>
+                    <th>Érdemjegy</th>
+                    <th>Törlés</th>
+                </tr>
+            </thead>
+            <tbody>
+                <!-- Dinamikusan generált tartalom -->
+            </tbody>
+        </table>
+    </main>
+    <script>
+        let students = [];
+
+        function getThresholds() {
+            return {
+                5: parseFloat(document.getElementById('grade5').value),
+                4: parseFloat(document.getElementById('grade4').value),
+                3: parseFloat(document.getElementById('grade3').value),
+                2: parseFloat(document.getElementById('grade2').value)
+            };
+        }
+
+        function getMaxPoints() {
+            return parseFloat(document.getElementById('maxPoints').value);
+        }
+
+        function addStudent() {
+            const className = document.getElementById('class').value.trim();
+            const name = document.getElementById('studentName').value.trim();
+            let points = parseFloat(document.getElementById('studentPoints').value);
+            const maxPoints = getMaxPoints();
+            const thresholds = getThresholds();
+
+            if (!className || !name || isNaN(points) || points < 0 || isNaN(maxPoints) || maxPoints <= 0) {
+                alert('Kérlek, tölts ki minden mezőt helyesen, és ne adj meg negatív értékeket!');
+                return;
+            }
+
+            if (points > maxPoints) {
+                alert(`A pontszám nem haladhatja meg a maximális pontszámot (${maxPoints})!`);
+                points = maxPoints;
+                document.getElementById('studentPoints').value = maxPoints;
+            }
+
+            const percentage = (points / maxPoints) * 100;
+            let grade;
+            if (percentage >= thresholds[5]) {
+                grade = 'Jeles (5)';
+            } else if (percentage >= thresholds[4]) {
+                grade = 'Jó (4)';
+            } else if (percentage >= thresholds[3]) {
+                grade = 'Közepes (3)';
+            } else if (percentage >= thresholds[2]) {
+                grade = 'Elégséges (2)';
+            } else {
+                grade = 'Elégtelen (1)';
+            }
+
+            students.push({ className, name, points, percentage: percentage.toFixed(2), grade });
+            renderTable();
+        }
+
+        function renderTable() {
+            const tbody = document.querySelector('#studentTable tbody');
+            tbody.innerHTML = '';
+
+            students.forEach((student, index) => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${student.className}</td>
+                    <td>${student.name}</td>
+                    <td>${student.points}</td>
+                    <td>${student.percentage}%</td>
+                    <td>${student.grade}</td>
+                    <td><button class="delete-btn" onclick="deleteStudent(${index})">X</button></td>
+                `;
+                tbody.appendChild(row);
+            });
+        }
+
+        function deleteStudent(index) {
+            students.splice(index, 1);
+            renderTable();
+        }
+    </script>
+</body>
+</html>
